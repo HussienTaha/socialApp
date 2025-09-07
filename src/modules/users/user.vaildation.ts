@@ -12,7 +12,8 @@
     role: z.string().min(3).max(20).optional(),
     phone: z.string().min(3).max(20).optional(),
     age: z.number().min(18).max(100).optional(),
-    
+    lName: z.string().min(3).max(20),
+    fName: z.string().min(3).max(20),
  }).required().superRefine((data, ctx) => {
     if(data.password !== data.cpassword){
         ctx.addIssue({

@@ -18,25 +18,17 @@ class UserService {
     //  private _userModel= new DBrepositories<IUser>(userModel)
     private _userModel = new UserRepository(userModel)
 
-    constructor() {}
-    async signup(req: Request, res: Response, next: NextFunction) {
-        try {
+    constructor() {
+        
+    }
+    signup = async(req: Request, res: Response, next: NextFunction)=> {
+     
+            let { userName, email, password,lName,fName,cpassword, gender, address, role, phone, age }:signUpschemaType = req.body
 
-            let { userName, email, password,cpassword, gender, address, role, phone, age }:signUpschemaType = req.body
-
-            // const user :HydratedDocument<IUser> =await this._userModel.create({
-            //     userName,
-            //     email,
-            //     password,
-            //     gender,
-            //     address,
-            //     role,
-            //     phone,
-            //     age
-            // })
+     
 
 
-            if (await this._userModel.findOne({email})) {
+            if (await this._userModel.findOne({ email })) {
                 throw new Error("Email already exists");
             }
       
@@ -49,7 +41,9 @@ class UserService {
                 address,
                 role,
                 phone,
-                age
+                age,
+                lName,
+                fName
             })
 
             eventEmitter.emit("confermemail",{
@@ -58,19 +52,19 @@ class UserService {
             })
            
             res.status(201).json({ message: "User signed up successfully 👌👌",user });
-        } catch (error) {
-            next(error);
-        }
+       
+            
+        
     }
 
     // login service
     async login(req: Request, res: Response, next: NextFunction) {
-        try {
+      
             // Your login logic here
             res.status(200).json({ message: "User logged in successfully" });
-        } catch (error) {
-            next(error);
-        }
+        
+            
+        
     }
 }
 
