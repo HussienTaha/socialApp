@@ -45,7 +45,7 @@ export const emailTemplet = (otp: number) => {
                 </tr>
                 <tr>
                 <td>
-                <p href="${otp}" style="margin:10px 0px 30px 0px;border-radius:4px;padding:10px 20px;border: 0;color:#fff;background-color:#630E2B; ">Verify Email address</p>
+                <p  style="margin:10px 0px 30px 0px;border-radius:4px;padding:10px 20px;border: 0;color:#fff;background-color:#630E2B; ">${otp}</p>
                 </td>
                 </tr>
                 </table>
