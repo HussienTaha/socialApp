@@ -1,4 +1,5 @@
 import mongoose, { Types }from "mongoose"
+import { string } from "zod"
 
 export enum GenderType {
     male = "male",
@@ -14,9 +15,11 @@ export interface IUser {
     lName: string ,
     userName?:string, 
     age?: number, 
+    otp?:string,
     email: string, 
     password: string, 
     gender: string, 
+    confermed: boolean,
     address?: string, 
     role?: string, 
     phone?: string, 
@@ -29,6 +32,8 @@ const userSchema = new  mongoose.Schema<IUser>({
     lName:{ type:String  ,  required: true,minlength:3 ,mixlength:20 },
   age:{ type: Number, required: true ,min:18,max:100 },
     email:{ type: String, required: true , unique: true },
+    otp :{ type: String},
+    confermed:{ type: Boolean, default: false },
     password:{ type: String, required: true },
     gender:{ type: String, enum: GenderType , default : GenderType.male, required: true },
     address:{ type: String, required: true },
@@ -36,6 +41,7 @@ const userSchema = new  mongoose.Schema<IUser>({
     phone:{ type: String, required: true },
     createdAt:Date,
     updatedAt:Date
+     
 
 
 

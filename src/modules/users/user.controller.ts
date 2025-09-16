@@ -1,12 +1,21 @@
+import { authantcation } from './../../middleware/Authentcation';
+import* as UV from './user.vaildation';
+
 
 import { Router } from "express";
 import  UR from "./user.service";
+import { Validation } from "../../middleware/vaildation";
 
 
  const userRouter = Router();
 
-userRouter.post("/signup", UR.signup);
-userRouter.post("/login", UR.login) 
+userRouter.post("/signup" ,Validation(UV.signUpSchema), UR.signup);
+userRouter.post("/login",Validation(UV.loginSchema), UR.login) 
+userRouter.patch("/confermedOtp",Validation(UV.confermedotpSchema), UR.confermotp) 
+userRouter.get("/profile",authantcation(), UR.gitprofile) 
+
+
+
 
 
 export default userRouter;

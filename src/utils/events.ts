@@ -5,8 +5,8 @@ import { emailTemplet } from "../service/emailTemplet";
 
 export const eventEmitter = new EventEmitter();
 eventEmitter.on( "confermemail", async(data) => {
-    const {email} =data
-          const otp =await generateOtp()
+    const {email,otp} =data
+        
                 await sendEmail({
                     to: email,
                     subject: "Account Verification",
