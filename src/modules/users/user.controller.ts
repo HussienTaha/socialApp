@@ -1,3 +1,4 @@
+import { TokenType } from './../../utils/token';
 import { authantcation } from './../../middleware/Authentcation';
 import* as UV from './user.vaildation';
 
@@ -14,6 +15,7 @@ userRouter.post("/login",Validation(UV.loginSchema), UR.login)
 userRouter.patch("/confermedOtp",Validation(UV.confermedotpSchema), UR.confermotp) 
 userRouter.get("/profile",authantcation(), UR.gitprofile) 
 userRouter.post("/logout",authantcation(),Validation(UV.logoutSchema), UR.logout)
+userRouter.get("/refreshToken",authantcation( TokenType.refresh), UR.refreshToken)
 
 
 

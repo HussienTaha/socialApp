@@ -160,6 +160,47 @@ class UserService {
     
     return res.status(200).json({ message: "User logged out successfully  on this device" });
   }
+
+  refreshToken = async (req: Request, res: Response, next: NextFunction) => {
+
+ const jwtid=uuidv4()
+
+   const accessToken = await generateToken({
+      payload: { id: req?.user?._id, email: req.user?.email, role: req.user?.role as RoleType },
+      segnature:
+        req?.user?.role == RoleType.user
+          ? process.env.USER_ACCESS_TOKEN_KEY!
+          : process.env.ADMIN_ACCESS_TOKEN_KEY!,
+      option: { expiresIn: "1h", jwtid  },
+    });
+
+    const refreshToken = await generateToken({
+      payload: { id:req?.user?._id, email: req.user?.email, role: req?.user?.role as RoleType },
+      segnature:
+       req?. user?.role == RoleType.user
+          ? process.env.USER_REFRESH_TOKEN_KEY!
+          : process.env.ADMIN_REFRESH_TOKEN_KEY!,
+      option: { expiresIn: "30d",jwtid },
+    });
+    const accessTokenAndRefreshToken = {
+      accessToken,
+      refreshToken,
+        
+    }
+        await this._revokedModel.create({
+      tokenId :req?.decoded.jti!,
+      userId: req.user?._id!,
+      expireAt: new Date( req?.decoded.exp! * 1000),
+    })
+
+
+    return res.status(200).json({ message: " success to created a new refresh token" ,accessTokenAndRefreshToken });
+  };
+
+
+
+
+
 }
 
 export default new UserService();
