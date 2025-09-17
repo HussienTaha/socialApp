@@ -13,6 +13,7 @@ userRouter.post("/signup" ,Validation(UV.signUpSchema), UR.signup);
 userRouter.post("/login",Validation(UV.loginSchema), UR.login) 
 userRouter.patch("/confermedOtp",Validation(UV.confermedotpSchema), UR.confermotp) 
 userRouter.get("/profile",authantcation(), UR.gitprofile) 
+userRouter.post("/logout",authantcation(),Validation(UV.logoutSchema), UR.logout)
 
 
 

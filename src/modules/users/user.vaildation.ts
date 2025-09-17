@@ -1,5 +1,10 @@
-import z from "zod";
 
+import z from "zod";
+export  enum flagType{
+  all = "all",
+  current = "current"
+  
+}
 export const signUpSchema = {
   body: z
     .strictObject({
@@ -40,7 +45,16 @@ export const loginSchema = {
       .string()
       .regex(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/),
   }),
+
+  
+}
+
+export const logoutSchema = {
+  body: z.strictObject({
+    flag: z.enum(flagType),
+  }).required(),
 }
 export type loginSchemaType = z.infer<typeof loginSchema.body>;
 export type confermedotpSchemaType = z.infer<typeof confermedotpSchema.body>;
 export type signUpschemaType = z.infer<typeof signUpSchema.body>;
+export type logoutSchemaType = z.infer<typeof logoutSchema.body>; 

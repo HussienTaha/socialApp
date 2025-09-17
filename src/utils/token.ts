@@ -1,4 +1,7 @@
+import th from 'zod/v4/locales/th.js';
+import RevokedTokenModel from '../DB/models/revokedtoken.model';
 import userModel from '../DB/models/user.model';
+import { RevokedTokenRepository } from '../DB/repositories/revokedToken.reposatories';
 import { UserRepository } from './../DB/repositories/user.reposatories';
 import { CustomError } from './classErrorHandling';
 import jwt, { JwtPayload }  from 'jsonwebtoken'
@@ -21,6 +24,7 @@ export enum TokenType{
 }
 
 const  _userModel = new UserRepository(userModel);
+const  _revokedModel = new RevokedTokenRepository(RevokedTokenModel);
 
 export const getsegnature = async(tokenType:TokenType ,prefix:string) => {
      if(tokenType === TokenType.access){
@@ -66,7 +70,14 @@ export const decodedTokenAndfitchUser=async(token:string,segnature:string) => {
     if(!user.confermed){
         throw new CustomError("User not confirmed or is deleted",401)
     }
-    return {user,decoded}
 
+    if (await _revokedModel.findOne({tokenId:decoded.jti})){ 
+        throw new CustomError("Token is revoked",401)
+    }
+     if(user?.changecredentials?.getDate()!>decoded?.iat!*1000){
+throw new CustomError("User change credentials and token is expired or is revoked",401)  
 
+    }
+
+      return {user,decoded}
 }

@@ -13,14 +13,12 @@ export const authantcation = ( tokenType :TokenType = TokenType.access)=>
     const { authorization } = req.headers;
     const [prefix, token] = authorization?.split(" ") || [];
     if (!prefix || !token) {
-      return res
-        .status(401)
-        .json({ message: "Invalid authorization header format", status: 401 });
+      throw new CustomError("Invalid authorization header format", 401);
     }
 
     const segnature = await getsegnature(tokenType,prefix);
     if (!segnature) {
-      throw new CustomError("Invalid authorization header format", 401)    
+      throw new CustomError("Invalid segnature not found", 401)    
      
     }
 

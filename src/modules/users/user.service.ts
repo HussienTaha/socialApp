@@ -1,6 +1,7 @@
+
 import { UserRepository } from "./../../DB/repositories/user.reposatories";
 import { HydratedDocument, Model } from "mongoose";
-import { confermedotpSchemaType, signUpschemaType } from "./user.vaildation";
+import { confermedotpSchemaType, flagType, logoutSchemaType, signUpschemaType } from "./user.vaildation";
 import { NextFunction, Request, Response } from "express";
 import userModel, { IUser, RoleType } from "../../DB/models/user.model";
 import { DBrepositories } from "../../DB/repositories/DB.repositories";
@@ -8,14 +9,18 @@ import { Compare, Hash } from "../../utils/hash";
 import { generateOtp, sendEmail } from "../../service/sendEmail";
 import { emailTemplet } from "../../service/emailTemplet";
 import { eventEmitter } from "../../utils/events";
-import { string } from "zod";
+import {  v4 as uuidv4 } from "uuid";
 import { compare } from "bcrypt";
 import { CustomError } from "../../utils/classErrorHandling";
 import { generateToken } from "../../utils/token";
+import { RevokedTokenRepository } from "../../DB/repositories/revokedToken.reposatories";
+import RevokedTokenModel from "../../DB/models/revokedtoken.model";
+
 class UserService {
   // private _userModel:Model<IUser>=userModel
   //  private _userModel= new DBrepositories<IUser>(userModel)
   private _userModel = new UserRepository(userModel);
+  private _revokedModel = new RevokedTokenRepository(RevokedTokenModel);
 
   constructor() {}
   signup = async (req: Request, res: Response, next: NextFunction) => {
@@ -100,13 +105,16 @@ class UserService {
     if (!comper) {
       throw new CustomError("Invalid password", 404);
     }
+    const jwtid=uuidv4()
+ 
+    
     const accessToken = await generateToken({
       payload: { id: user._id, email, role: user?.role as RoleType },
       segnature:
         user?.role == RoleType.user
           ? process.env.USER_ACCESS_TOKEN_KEY!
           : process.env.ADMIN_ACCESS_TOKEN_KEY!,
-      option: { expiresIn: "1h" },
+      option: { expiresIn: "1h", jwtid  },
     });
 
     const refreshToken = await generateToken({
@@ -115,7 +123,7 @@ class UserService {
         user?.role == RoleType.user
           ? process.env.USER_REFRESH_TOKEN_KEY!
           : process.env.ADMIN_REFRESH_TOKEN_KEY!,
-      option: { expiresIn: "30d" },
+      option: { expiresIn: "30d",jwtid },
     });
     const accessTokenAndRefreshToken = {
       accessToken,
@@ -132,6 +140,25 @@ class UserService {
     return res.status(200).json({ message: "profile get successfully" ,user:req.user });
 
 
+  }
+  logout = async (req: Request, res: Response, next: NextFunction) => {
+    const { flag}: logoutSchemaType = req.body;
+    
+    if(flag === flagType?.all){
+      await this._revokedModel.updateone({ user: req.user?._id }, { changecredentials : new Date() });
+      return res.status(200).json({ message: "User logged out successfully" });     
+      
+    }
+    await this ._revokedModel.create({
+      tokenId :req?.decoded.jti!,
+      userId: req.user?._id!,
+      expireAt: new Date( req?.decoded.exp! * 1000),
+    })
+
+
+
+    
+    return res.status(200).json({ message: "User logged out successfully  on this device" });
   }
 }
 
