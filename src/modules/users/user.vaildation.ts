@@ -54,6 +54,32 @@ export const logoutSchema = {
     flag: z.enum(flagType),
   }).required(),
 }
+export const forgetPasswordSchema = {
+  body: z.strictObject({
+    email: z.string().email(),
+  }),
+}
+export const reasetPasswordSchema = {
+  body: z.strictObject({
+    email: z.string().email(),
+    otp: z.string().regex(/^[0-9]{6}$/),
+    password: z
+      .string()
+      .regex(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/),
+    cpassword: z.string(),
+  }).superRefine((data, ctx) => {
+    if (data.password !== data.cpassword) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Passwords do not match",
+      });
+    }
+  })
+  
+
+}
+export type reasetPasswordSchemaType = z.infer<typeof reasetPasswordSchema.body>;
+export type forgetPasswordSchemaType = z.infer<typeof forgetPasswordSchema.body>;
 export type loginSchemaType = z.infer<typeof loginSchema.body>;
 export type confermedotpSchemaType = z.infer<typeof confermedotpSchema.body>;
 export type signUpschemaType = z.infer<typeof signUpSchema.body>;

@@ -14,4 +14,14 @@ eventEmitter.on( "confermemail", async(data) => {
     
                 })
 
+});eventEmitter.on( "forgetpassword", async(data) => {
+    const {email,otp} =data
+        
+                await sendEmail({
+                    to: email,
+                    subject: "Account Verification",
+                    html:emailTemplet(otp) ,
+    
+                })
+
 });

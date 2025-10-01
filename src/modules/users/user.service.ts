@@ -1,7 +1,7 @@
 
 import { UserRepository } from "./../../DB/repositories/user.reposatories";
 import { HydratedDocument, Model } from "mongoose";
-import { confermedotpSchemaType, flagType, logoutSchemaType, signUpschemaType } from "./user.vaildation";
+import { confermedotpSchemaType, flagType, forgetPasswordSchemaType, logoutSchemaType, reasetPasswordSchemaType, signUpschemaType } from "./user.vaildation";
 import { NextFunction, Request, Response } from "express";
 import userModel, { IUser, RoleType } from "../../DB/models/user.model";
 import { DBrepositories } from "../../DB/repositories/DB.repositories";
@@ -15,6 +15,7 @@ import { CustomError } from "../../utils/classErrorHandling";
 import { generateToken } from "../../utils/token";
 import { RevokedTokenRepository } from "../../DB/repositories/revokedToken.reposatories";
 import RevokedTokenModel from "../../DB/models/revokedtoken.model";
+import { exists } from "fs";
 
 class UserService {
   // private _userModel:Model<IUser>=userModel
@@ -72,7 +73,7 @@ class UserService {
     const { email, otp }: confermedotpSchemaType = req.body;
     const user = await this._userModel.findOne({
       email,
-      confermed: { $exists: false },
+      confermed: { $ne: true },
     });
     if (!user) {
       throw new CustomError("User not found", 404);
@@ -84,7 +85,7 @@ class UserService {
     if (!comper) {
       throw new Error("Invalid otp or expired otp");
     }
-    await this._userModel.findOne(
+    await this._userModel.updateone(
       { email },
       { $set: { confermed: true }, $unset: { otp: "" } }
     );
@@ -198,8 +199,42 @@ class UserService {
   };
 
 
+  forgetPassword = async (req: Request, res: Response, next: NextFunction) => {
+
+const { email }: forgetPasswordSchemaType = req.body;
+
+const user = await this._userModel.findOne({ email , confermed:{$exists:true}});
+
+if (!user) {
+  throw new CustomError("User not found", 404);
+}
+    const otp = await generateOtp();
+    const hashotp = await Hash(String(otp));
+    await this._userModel.updateone({ email }, { otp: hashotp });
+    eventEmitter.emit("forgetpassword", { email, otp });
+    return res.status(200).json({ message: "success to send email" });
 
 
+  }
+resetpassword = async (req: Request, res: Response, next: NextFunction) => {
+ const { password,email,otp }: reasetPasswordSchemaType = req.body;
+
+ const user = await this._userModel.findOne( {email , otp:{$exists:true}});
+
+if (!user) {
+  throw new CustomError("User not found", 404);
+}
+
+if(!await compare(otp,user.otp!)){
+  throw new CustomError("Otp not valid", 401);
+}
+const hashpassword = await Hash(password);
+await this._userModel.updateone({ email }, { password: hashpassword, $unset: { otp: "" }});
+return res.status(200).json({ message: "success to reset password" });
+
+
+
+}
 
 }
 

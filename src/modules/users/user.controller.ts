@@ -16,7 +16,8 @@ userRouter.patch("/confermedOtp",Validation(UV.confermedotpSchema), UR.confermot
 userRouter.get("/profile",authantcation(), UR.gitprofile) 
 userRouter.post("/logout",authantcation(),Validation(UV.logoutSchema), UR.logout)
 userRouter.get("/refreshToken",authantcation( TokenType.refresh), UR.refreshToken)
-
+userRouter.post("/forgetPassword",Validation(UV.forgetPasswordSchema), UR.forgetPassword)
+userRouter.patch("/resetPassword",Validation(UV.reasetPasswordSchema), UR.resetpassword)
 
 
 

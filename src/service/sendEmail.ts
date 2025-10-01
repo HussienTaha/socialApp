@@ -30,5 +30,5 @@ export const generateOtp = async () => {
   const otp = Math.floor( Math.random() *( 900000-100000+1)+100000);
   return otp;
 };
-console.log(generateOtp());
+
 
