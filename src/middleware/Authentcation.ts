@@ -11,6 +11,7 @@ export const authantcation = ( tokenType :TokenType = TokenType.access)=>
     return async (req :Request, res :Response, next :NextFunction) => {
 
     const { authorization } = req.headers;
+    
     const [prefix, token] = authorization?.split(" ") || [];
     if (!prefix || !token) {
       throw new CustomError("Invalid authorization header format", 401);
