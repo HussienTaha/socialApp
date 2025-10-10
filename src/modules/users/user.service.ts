@@ -1,7 +1,14 @@
-
+import { file } from 'zod';
 import { UserRepository } from "./../../DB/repositories/user.reposatories";
 import { HydratedDocument, Model } from "mongoose";
-import { confermedotpSchemaType, flagType, forgetPasswordSchemaType, logoutSchemaType, reasetPasswordSchemaType, signUpschemaType } from "./user.vaildation";
+import {
+  confermedotpSchemaType,
+  flagType,
+  forgetPasswordSchemaType,
+  logoutSchemaType,
+  reasetPasswordSchemaType,
+  signUpschemaType,
+} from "./user.vaildation";
 import { NextFunction, Request, Response } from "express";
 import userModel, { IUser, RoleType } from "../../DB/models/user.model";
 import { DBrepositories } from "../../DB/repositories/DB.repositories";
@@ -9,13 +16,15 @@ import { Compare, Hash } from "../../utils/hash";
 import { generateOtp, sendEmail } from "../../service/sendEmail";
 import { emailTemplet } from "../../service/emailTemplet";
 import { eventEmitter } from "../../utils/events";
-import {  v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from "uuid";
 import { compare } from "bcrypt";
 import { CustomError } from "../../utils/classErrorHandling";
 import { generateToken } from "../../utils/token";
 import { RevokedTokenRepository } from "../../DB/repositories/revokedToken.reposatories";
 import RevokedTokenModel from "../../DB/models/revokedtoken.model";
 import { exists } from "fs";
+import { uploadFile, uploadFiles, uplodeLageFile } from "../../utils/s3config";
+import { allowedTypesEnum } from "../../middleware/multer.cloud";
 
 class UserService {
   // private _userModel:Model<IUser>=userModel
@@ -40,7 +49,7 @@ class UserService {
     }: signUpschemaType = req.body;
 
     if (await this._userModel.findOne({ email })) {
-      throw new CustomError("Email already exists",404);
+      throw new CustomError("Email already exists", 404);
     }
     const otp = await generateOtp();
     const hashotp = await Hash(String(otp));
@@ -93,7 +102,7 @@ class UserService {
     return res.status(200).json({ message: "User confermed otp successfully" });
   };
   // login service
- login = async(req: Request, res: Response, next: NextFunction)=> {
+  login = async (req: Request, res: Response, next: NextFunction) => {
     const { email, password }: signUpschemaType = req.body;
 
     const user = await this._userModel.findOne({ email, confermed: true });
@@ -106,16 +115,15 @@ class UserService {
     if (!comper) {
       throw new CustomError("Invalid password", 404);
     }
-    const jwtid=uuidv4()
- 
-    
+    const jwtid = uuidv4();
+
     const accessToken = await generateToken({
       payload: { id: user._id, email, role: user?.role as RoleType },
       segnature:
         user?.role == RoleType.user
           ? process.env.USER_ACCESS_TOKEN_KEY!
           : process.env.ADMIN_ACCESS_TOKEN_KEY!,
-      option: { expiresIn: "1h", jwtid  },
+      option: { expiresIn: "1h", jwtid },
     });
 
     const refreshToken = await generateToken({
@@ -124,118 +132,168 @@ class UserService {
         user?.role == RoleType.user
           ? process.env.USER_REFRESH_TOKEN_KEY!
           : process.env.ADMIN_REFRESH_TOKEN_KEY!,
-      option: { expiresIn: "30d",jwtid },
+      option: { expiresIn: "30d", jwtid },
     });
     const accessTokenAndRefreshToken = {
       accessToken,
       refreshToken,
-        
-    }
+    };
 
-    res.status(200).json({ message: "User logged in successfully" ,accessTokenAndRefreshToken });
-  }
+    res
+      .status(200)
+      .json({
+        message: "User logged in successfully",
+        accessTokenAndRefreshToken,
+      });
+  };
   //  greate get user service
   gitprofile = async (req: Request, res: Response, next: NextFunction) => {
-      
-
-    return res.status(200).json({ message: "profile get successfully" ,user:req.user });
-
-
-  }
+    return res
+      .status(200)
+      .json({ message: "profile get successfully", user: req.user });
+  };
   logout = async (req: Request, res: Response, next: NextFunction) => {
-    const { flag}: logoutSchemaType = req.body;
-    
-    if(flag === flagType?.all){
-      await this._revokedModel.updateone({ user: req.user?._id }, { changecredentials : new Date() });
-      return res.status(200).json({ message: "User logged out successfully" });     
-      
+    const { flag }: logoutSchemaType = req.body;
+
+    if (flag === flagType?.all) {
+      await this._revokedModel.updateone(
+        { user: req.user?._id },
+        { changecredentials: new Date() }
+      );
+      return res.status(200).json({ message: "User logged out successfully" });
     }
-    await this ._revokedModel.create({
-      tokenId :req?.decoded.jti!,
+    await this._revokedModel.create({
+      tokenId: req?.decoded.jti!,
       userId: req.user?._id!,
-      expireAt: new Date( req?.decoded.exp! * 1000),
-    })
+      expireAt: new Date(req?.decoded.exp! * 1000),
+    });
 
-
-
-    
-    return res.status(200).json({ message: "User logged out successfully  on this device" });
-  }
+    return res
+      .status(200)
+      .json({ message: "User logged out successfully  on this device" });
+  };
 
   refreshToken = async (req: Request, res: Response, next: NextFunction) => {
+    const jwtid = uuidv4();
 
- const jwtid=uuidv4()
-
-   const accessToken = await generateToken({
-      payload: { id: req?.user?._id, email: req.user?.email, role: req.user?.role as RoleType },
+    const accessToken = await generateToken({
+      payload: {
+        id: req?.user?._id,
+        email: req.user?.email,
+        role: req.user?.role as RoleType,
+      },
       segnature:
         req?.user?.role == RoleType.user
           ? process.env.USER_ACCESS_TOKEN_KEY!
           : process.env.ADMIN_ACCESS_TOKEN_KEY!,
-      option: { expiresIn: "1h", jwtid  },
+      option: { expiresIn: "1h", jwtid },
     });
 
     const refreshToken = await generateToken({
-      payload: { id:req?.user?._id, email: req.user?.email, role: req?.user?.role as RoleType },
+      payload: {
+        id: req?.user?._id,
+        email: req.user?.email,
+        role: req?.user?.role as RoleType,
+      },
       segnature:
-       req?. user?.role == RoleType.user
+        req?.user?.role == RoleType.user
           ? process.env.USER_REFRESH_TOKEN_KEY!
           : process.env.ADMIN_REFRESH_TOKEN_KEY!,
-      option: { expiresIn: "30d",jwtid },
+      option: { expiresIn: "30d", jwtid },
     });
     const accessTokenAndRefreshToken = {
       accessToken,
       refreshToken,
-        
-    }
-        await this._revokedModel.create({
-      tokenId :req?.decoded.jti!,
+    };
+    await this._revokedModel.create({
+      tokenId: req?.decoded.jti!,
       userId: req.user?._id!,
-      expireAt: new Date( req?.decoded.exp! * 1000),
-    })
+      expireAt: new Date(req?.decoded.exp! * 1000),
+    });
 
-
-    return res.status(200).json({ message: " success to created a new refresh token" ,accessTokenAndRefreshToken });
+    return res
+      .status(200)
+      .json({
+        message: " success to created a new refresh token",
+        accessTokenAndRefreshToken,
+      });
   };
 
-
   forgetPassword = async (req: Request, res: Response, next: NextFunction) => {
+    const { email }: forgetPasswordSchemaType = req.body;
 
-const { email }: forgetPasswordSchemaType = req.body;
+    const user = await this._userModel.findOne({
+      email,
+      confermed: { $exists: true },
+    });
 
-const user = await this._userModel.findOne({ email , confermed:{$exists:true}});
-
-if (!user) {
-  throw new CustomError("User not found", 404);
-}
+    if (!user) {
+      throw new CustomError("User not found", 404);
+    }
     const otp = await generateOtp();
     const hashotp = await Hash(String(otp));
     await this._userModel.updateone({ email }, { otp: hashotp });
     eventEmitter.emit("forgetpassword", { email, otp });
     return res.status(200).json({ message: "success to send email" });
+  };
+  resetpassword = async (req: Request, res: Response, next: NextFunction) => {
+    const { password, email, otp }: reasetPasswordSchemaType = req.body;
+
+    const user = await this._userModel.findOne({
+      email,
+      otp: { $exists: true },
+    });
+
+    if (!user) {
+      throw new CustomError("User not found", 404);
+    }
+
+    if (!(await compare(otp, user.otp!))) {
+      throw new CustomError("Otp not valid", 401);
+    }
+    const hashpassword = await Hash(password);
+    await this._userModel.updateone(
+      { email },
+      { password: hashpassword, $unset: { otp: "" } }
+    );
+    return res.status(200).json({ message: "success to reset password" });
+  };
+  uplodeImage = async (req: Request, res: Response, next: NextFunction) => {
+    const key = await uploadFile({
+      Path: `users${req.user?._id}`,
+
+      file: req.file!,
+    });
+
+    return res
+      .status(200)
+      .json({ message: "success to uplod image", key: key });
+  };
+  uplodeLargeImage = async (req: Request, res: Response, next: NextFunction) => {
+    const key = await uplodeLageFile({
+      Path: `users${req.user?._id}`,
+
+      file: req.file!,
+    });
+
+    return res
+      .status(200)
+      .json({ message: "success to uplod image", key: key });
+  };
 
 
-  }
-resetpassword = async (req: Request, res: Response, next: NextFunction) => {
- const { password,email,otp }: reasetPasswordSchemaType = req.body;
 
- const user = await this._userModel.findOne( {email , otp:{$exists:true}});
+   uploadFiles = async (req: Request, res: Response, next: NextFunction) => {
+    const key = await uploadFiles({
+      path: `users${req.user?._id}`,
+      files: req.files as Express.Multer.File[]
+    
+    })
 
-if (!user) {
-  throw new CustomError("User not found", 404);
-}
-
-if(!await compare(otp,user.otp!)){
-  throw new CustomError("Otp not valid", 401);
-}
-const hashpassword = await Hash(password);
-await this._userModel.updateone({ email }, { password: hashpassword, $unset: { otp: "" }});
-return res.status(200).json({ message: "success to reset password" });
-
-
-
-}
-
+    return res
+      .status(200)
+      .json({ message: "success to uplod image", key: key });
+  };
 }
 
 export default new UserService();
