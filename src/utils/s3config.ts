@@ -1,7 +1,7 @@
 
 import {createReadStream} from "fs";
 import { v4 as uuidv4 } from "uuid";
-import { ObjectCannedACL, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, ObjectCannedACL, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { allowedTypesEnum } from "../middleware/multer.cloud";import { CustomError } from './classErrorHandling';
 import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -138,3 +138,26 @@ export const creartUplodeFilePresignedUrl = async ({
   const url = await getSignedUrl(s3Client(), command, { expiresIn: 3600 });
   return url;
 };  
+
+
+//! git file 
+export const gitFile = async (
+  {
+   
+    Bucket = process.env.AWS_BUCKET_NAME!,
+    Key 
+ 
+  }: {
+
+    Bucket?: string;
+    Key: string;
+ 
+  } 
+
+)=>{
+  const command = new GetObjectCommand({
+    Bucket,
+    Key
+  })
+     return  await s3Client().send(command)
+}

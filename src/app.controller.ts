@@ -11,6 +11,10 @@ import { CustomError } from "./utils/classErrorHandling";
 import userRouter from "./modules/users/user.controller";
 import connrectionDB from "./DB/connetionDB";
 import connectionDB from "./DB/connetionDB";
+import { gitFile } from "./utils/s3config";
+import { pipeline } from "node:stream";
+import { promisify } from "node:util";
+const pipelineAsync = promisify(pipeline);
 const app: express.Application = express();
 const port: string | number =process.env.PORT || 5000;
 
@@ -21,6 +25,34 @@ const limiter = rateLimit({
         statusCode: 429, // 429 status = Too Many Requests 
        legacyHeaders: false // Disable the `X-RateLimit-*` headers
     })
+
+
+app.get("/uplode/*path", async (req:Request, res:Response , next:NextFunction) => {
+    const {path} = req.params as unknown as {path:string[]};
+
+    const {downolade} = req.params as unknown as {downolade:string[]};
+    const Key = path.join("/");
+    const result = await gitFile({Key});
+    const stream = result.Body as NodeJS.ReadableStream;
+    res.setHeader("Content-Type", result?.ContentType!);
+    if(downolade){
+            res.setHeader("Content-Disposition", `attachment; filename="${downolade} || path.join("/").split("/").pop()}"`);
+
+    }
+ await pipelineAsync(stream,res);
+    
+})
+
+
+
+
+
+
+
+
+
+
+
 
 
 
