@@ -20,9 +20,11 @@ userRouter.post("/logout",authantcation(),Validation(UV.logoutSchema), UR.logout
 userRouter.get("/refreshToken",authantcation( TokenType.refresh), UR.refreshToken)
 userRouter.post("/forgetPassword",Validation(UV.forgetPasswordSchema), UR.forgetPassword)
 userRouter.patch("/resetPassword",Validation(UV.reasetPasswordSchema), UR.resetpassword)
+//!aws s3 handling uplode image
 userRouter.post("/uplode",  authantcation(),multerCloud({ fileTypes: Object.values(FILE_TYPES.IMAGES)}).single("file") ,UR.uplodeImage)
 userRouter.post("/uplodeLargeImage",  authantcation(),multerCloud({ fileTypes: Object.values(FILE_TYPES.IMAGES)}).single("file") ,UR.uplodeLargeImage)
 userRouter.post("/uploadFiles",  authantcation(),multerCloud({ fileTypes: Object.values(FILE_TYPES.IMAGES)}).array("files") ,UR.uploadFiles)
+userRouter.post("/presignedurl",  authantcation() ,UR.uplodeFileswithpresignedurl)
 
 
 

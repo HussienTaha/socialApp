@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ObjectCannedACL, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { allowedTypesEnum } from "../middleware/multer.cloud";import { CustomError } from './classErrorHandling';
 import { Upload } from "@aws-sdk/lib-storage";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 ;
 export const s3Client = ()=>{   
 
@@ -112,3 +113,28 @@ if (!files || !Array.isArray(files)) {
 
   return urls;
 };
+
+
+export const creartUplodeFilePresignedUrl = async ({
+
+  Bucket = process.env.AWS_BUCKET_NAME!,
+  Path = "general",
+  orgnalName ,
+  contentType
+ 
+
+}: {
+  Bucket?: string;
+  Path?: string;
+  orgnalName:string,
+  contentType:string
+}) => {
+  const command = new PutObjectCommand({
+    Bucket,
+    Key: `${process.env.AWS_FOLDER}/${Path}/${uuidv4()}_${orgnalName}`,
+    ContentType: contentType
+  });
+
+  const url = await getSignedUrl(s3Client(), command, { expiresIn: 3600 });
+  return url;
+};  

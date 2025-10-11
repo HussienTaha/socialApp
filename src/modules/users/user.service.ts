@@ -23,8 +23,9 @@ import { generateToken } from "../../utils/token";
 import { RevokedTokenRepository } from "../../DB/repositories/revokedToken.reposatories";
 import RevokedTokenModel from "../../DB/models/revokedtoken.model";
 import { exists } from "fs";
-import { uploadFile, uploadFiles, uplodeLageFile } from "../../utils/s3config";
+import { creartUplodeFilePresignedUrl, uploadFile, uploadFiles, uplodeLageFile } from "../../utils/s3config";
 import { allowedTypesEnum } from "../../middleware/multer.cloud";
+import ur from 'zod/v4/locales/ur.js';
 
 class UserService {
   // private _userModel:Model<IUser>=userModel
@@ -294,6 +295,26 @@ class UserService {
       .status(200)
       .json({ message: "success to uplod image", key: key });
   };
+
+uplodeFileswithpresignedurl = async (req: Request, res: Response, next: NextFunction) => {
+
+
+ const  { contentType,orgnalName}=req.body
+    const url = await creartUplodeFilePresignedUrl({
+ orgnalName,
+      contentType,
+      Path: `users/${req.user?._id}`,
+    
+    })
+
+    return res
+      .status(200)
+      .json({ message: "success to uplod image", url: url });
+  };
+
+
+
+
 }
 
 export default new UserService();
