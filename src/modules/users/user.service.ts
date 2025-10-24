@@ -281,9 +281,6 @@ class UserService {
       .status(200)
       .json({ message: "success to uplod image", key: key });
   };
-
-
-
    uploadFiles = async (req: Request, res: Response, next: NextFunction) => {
     const key = await uploadFiles({
       path: `users${req.user?._id}`,
@@ -295,7 +292,6 @@ class UserService {
       .status(200)
       .json({ message: "success to uplod image", key: key });
   };
-
 uplodeFileswithpresignedurl = async (req: Request, res: Response, next: NextFunction) => {
 
 
@@ -312,7 +308,28 @@ uplodeFileswithpresignedurl = async (req: Request, res: Response, next: NextFunc
       .json({ message: "success to uplod image", url: url });
   };
 
+uplodeProfileImage = async (req: Request, res: Response, next: NextFunction) => {
 
+ const  { contentType,orgnalName}=req.body
+
+const {key,url} = await creartUplodeFilePresignedUrl({
+
+      Path: `users/${req.user?._id}/coverImage`,
+      contentType,
+      orgnalName
+
+})
+
+const user =   await this._userModel.findOneAndupdate({ _id: req.user?._id }, {profileImage :key, tempProfileImage :req.user?.profileImage}) ;
+
+if (!user) {
+  throw new CustomError("User not found", 404);
+}
+eventEmitter.emit("uplodeProfileImage", { userId: req.user?._id, oldkey: req.user?.profileImage,  key, expiresIn:60 });
+    return res
+      .status(200)
+      .json({ message: "success to uplod image", key: key });
+  };
 
 
 }

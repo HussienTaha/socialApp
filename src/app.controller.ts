@@ -11,7 +11,13 @@ import { CustomError } from "./utils/classErrorHandling";
 import userRouter from "./modules/users/user.controller";
 import connrectionDB from "./DB/connetionDB";
 import connectionDB from "./DB/connetionDB";
-import { creartUplodeFilePresigneUrl, gitFile } from "./utils/s3config";
+import {
+  creartUplodeFilePresigneUrl,
+  deleteFile,
+  deletefiles,
+  getAllFiles,
+  gitFile,
+} from "./utils/s3config";
 import { pipeline } from "node:stream";
 import { promisify } from "node:util";
 const pipelineAsync = promisify(pipeline);
@@ -27,54 +33,102 @@ const limiter = rateLimit({
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
+app.get(
+  "/uplode/presignedUrl/*path",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { path } = req.params as unknown as { path: string[] };
 
+    const Key = path.join("/");
+    console.log(Key);
 
+    const url = await creartUplodeFilePresigneUrl({ Key });
 
+    return res.status(200).json({ message: "success", url });
+  }
+);
+app.get(
+  "/gitfiles",
+  async (req: Request, res: Response, next: NextFunction) => {
+  
+    const result = await getAllFiles ({ path:"users" });
 
+    return res
+      .status(200)
+      .json({ message: "success getAllFiles ❤️👌", result });
+  }
+);
+app.get(
+  "/delete/*path",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { path } = req.params as unknown as { path: string[] };
 
+    const Key = path.join("/");
+
+    const result = await deleteFile({ Key });
+
+    return res
+      .status(200)
+      .json({ message: "success delete file ❤️👌", result });
+  }
+);
+app.get(
+  "/deletefiles",
+  async (req: Request, res: Response, next: NextFunction) => {
+
+    const result = await deletefiles({ 
+      urls:[
+"socailMediaApp/users68dd85a31b297aac06bc5850/094ce9af-4f65-4fc7-91e8-2c8d442c07db_Screenshot 2025-10-10 232739.png", 
+"socailMediaApp/users68dd85a31b297aac06bc5850/50d5fc78-4acf-478b-b3ed-f54255fb1972_Screenshot 2025-10-10 232739.png",
+"socailMediaApp/users68dd85a31b297aac06bc5850/77a82f0d-cdd2-4f50-9ce6-31de5c1c0cb0_Screenshot 2025-10-10 232739.png",
+"socailMediaApp/users68dd85a31b297aac06bc5850/ad005e1d-aff7-4085-93b6-34029b5cc5fb_Screenshot 2025-10-10 232739.png",
+"socailMediaApp/users68dd85a31b297aac06bc5850/e7711965-a5ec-4b58-a8d1-5e44dde81ce3_user.jpg"
+      ]
+    });
+
+    return res
+      .status(200)
+      .json({ message: "success delete files ❤️👌", result });
+  }
+);
 app.get(
   "/uplode/*path",
   async (req: Request, res: Response, next: NextFunction) => {
     const { path } = req.params as unknown as { path: string[] };
 
-    const { downolade } = req.params as unknown as { downolade: string[] };
     const Key = path.join("/");
+
+    console.log("Fetching Key:", Key);
+
     const result = await gitFile({ Key });
     const stream = result.Body as NodeJS.ReadableStream;
     res.setHeader("Content-Type", result?.ContentType!);
-    if (downolade) {
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="${downolade} || path.join("/").split("/").pop()}"`
-      );
-    }
+
     await pipelineAsync(stream, res);
   }
 );
-
 app.get(
-  "/uplode/presignedUrl/*path",
+  "/downlode/*path",
   async (req: Request, res: Response, next: NextFunction) => {
-
-
-
-
     const { path } = req.params as unknown as { path: string[] };
+    const { downlode } = req.query as unknown as { downlode: string[] };
+    console.log(downlode);
 
-  
     const Key = path.join("/");
-console.log( Key);
 
-const url = await creartUplodeFilePresigneUrl({ Key });
-    
- return res.status(200).json({ message: "success",  url });
+    console.log("Fetching Key:", Key);
+
+    const result = await gitFile({ Key });
+    const stream = result.Body as NodeJS.ReadableStream;
+    res.setHeader("Content-Type", result?.ContentType!);
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${downlode || path.join("/").split("/").pop()}"`
+    );
+
+    await pipelineAsync(stream, res);
   }
 );
-
-
-
-
-
 
 const bootstrap = () => {
   app.use(express.json());

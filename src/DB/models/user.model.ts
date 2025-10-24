@@ -23,6 +23,8 @@ export interface IUser {
     address?: string, 
     changecredentials?:Date,
     role?: string, 
+    profileImage?:string,
+    tempProfileImage?:string,
     phone?: string, 
     createdAt:Date,
     updatedAt:Date
@@ -35,6 +37,8 @@ const userSchema = new  mongoose.Schema<IUser>({
     email:{ type: String, required: true , unique: true },
     otp :{ type: String},
     changecredentials:Date,
+    profileImage:{ type: String},
+    tempProfileImage:{ type: String},
     confermed:{ type: Boolean, default: false },
     password:{ type: String, required: true },
     gender:{ type: String, enum: GenderType , default : GenderType.male, required: true },
