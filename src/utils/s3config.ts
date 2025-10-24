@@ -161,3 +161,36 @@ export const gitFile = async (
   })
      return  await s3Client().send(command)
 }
+
+
+
+export const creartUplodeFilePresigneUrl = async (  {
+   
+    Bucket = process.env.AWS_BUCKET_NAME!,
+    
+    Key ,
+
+
+
+ 
+  }: {
+
+    Bucket?: string;
+    Key: string;
+
+ 
+  } )=>{
+
+  const command = new PutObjectCommand({
+    Bucket,
+    Key,
+ 
+
+  });
+  console.log(Bucket,Key);
+  
+  const url = await getSignedUrl(s3Client(), command, { expiresIn: 3600 });
+  return url;
+}
+
+
