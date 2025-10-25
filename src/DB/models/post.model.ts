@@ -1,17 +1,19 @@
-import { Schema, model, Document } from "mongoose";
+import { Schema, model, Document, models } from "mongoose";
 
-enum AllowCommentEnum {
+export enum AllowCommentEnum {
   ALLOW = "ALLOW",
   DISALLOW = "DISALLOW",
 }
 
-enum AvailabilityEnum {
+export  enum AvailabilityEnum {
   PUBLIC = "PUBLIC",
   PRIVATE = "PRIVATE",
+  HIDDEN = "HIDDEN",
+  FRIENDS = "FRIENDS",
 }
 
 
-export interface IPost extends Document {
+export interface IPost  {
   content: string;
   attachments?: string[];
   assetFolderId?: string;
@@ -23,6 +25,7 @@ export interface IPost extends Document {
 
   allowComment: AllowCommentEnum;
   availability: AvailabilityEnum;
+  friends?: Schema.Types.ObjectId[];
 
   deleteAt?: Date;
   deletedBy?: Schema.Types.ObjectId;
@@ -31,9 +34,9 @@ export interface IPost extends Document {
   restoredBy?: Schema.Types.ObjectId;
 }
 
-const postSchema = new Schema<IPost>(
+ export const postSchema = new Schema<IPost>(
   {
-    content: { type: String, minlength: 5, maxlength: 10000, required: true },
+    content: { type: String, minlength: 5, maxlength: 10000, required: function (){return this.attachments?.length === 0 } },
     attachments: [String],
     assetFolderId: String,
 
@@ -41,7 +44,7 @@ const postSchema = new Schema<IPost>(
 
     tags: [{ type: Schema.Types.ObjectId, ref: "User" }],
     likes: [{ type: Schema.Types.ObjectId, ref: "User" }],
-
+friends: [{ type: Schema.Types.ObjectId, ref: "User" }],
     allowComment: {
       type: String,
       enum: Object.values(AllowCommentEnum),
@@ -65,5 +68,5 @@ const postSchema = new Schema<IPost>(
     toObject: { virtuals: true },
   }
 );
-
-export const PostModel = model<IPost>("Post", postSchema);
+ const PostModel = models.Post || model("Post", postSchema);
+export default PostModel

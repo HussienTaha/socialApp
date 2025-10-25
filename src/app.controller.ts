@@ -20,6 +20,7 @@ import {
 } from "./utils/s3config";
 import { pipeline } from "node:stream";
 import { promisify } from "node:util";
+import postRouter from "./modules/post/post.controller";
 const pipelineAsync = promisify(pipeline);
 const app: express.Application = express();
 const port: string | number = process.env.PORT || 5000;
@@ -136,8 +137,9 @@ const bootstrap = () => {
   app.use(helmet());
   app.use(morgan("combined"));
   app.use(limiter);
+  
   app.use("/users", userRouter);
-
+  app.use("/posts", postRouter);
   app.get("/", (req: Request, res: Response, next: NextFunction) => {
     res.status(200).json({ message: "Server is up and running ❤️👌" });
   });
