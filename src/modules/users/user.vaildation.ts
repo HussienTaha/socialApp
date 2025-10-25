@@ -1,4 +1,5 @@
 
+import { Types } from "mongoose";
 import z from "zod";
 export  enum flagType{
   all = "all",
@@ -78,6 +79,28 @@ export const reasetPasswordSchema = {
   
 
 }
+
+
+
+export const freezeSchema = {
+  params: z
+    .object({
+      userId: z.string().optional(),
+    })
+    .required()
+    .refine(
+      (value) => {
+        // هنا بنتأكد إن لو فيه userId، يبقى ObjectId صحيح
+        return value?.userId ? Types.ObjectId.isValid(value.userId) : true;
+      },
+      {
+        message: "userId is required or not valid",
+        path: ["userId"],
+      }
+    ),
+};
+
+export type freezeSchemaType = z.infer<typeof freezeSchema.params>;
 export type reasetPasswordSchemaType = z.infer<typeof reasetPasswordSchema.body>;
 export type forgetPasswordSchemaType = z.infer<typeof forgetPasswordSchema.body>;
 export type loginSchemaType = z.infer<typeof loginSchema.body>;

@@ -25,8 +25,8 @@ userRouter.post("/uplode",  authantcation(),multerCloud({ fileTypes: Object.valu
 userRouter.post("/uplodeLargeImage",  authantcation(),multerCloud({ fileTypes: Object.values(FILE_TYPES.IMAGES)}).single("file") ,UR.uplodeLargeImage)
 userRouter.post("/uploadFiles",  authantcation(),multerCloud({ fileTypes: Object.values(FILE_TYPES.IMAGES)}).array("files") ,UR.uploadFiles)
 userRouter.post("/presignedurl",  authantcation() ,UR.uplodeFileswithpresignedurl)
-
-
+userRouter.delete("/frezed/{:userId}",  authantcation(),Validation(UV.freezeSchema),UR.frezeUser)
+userRouter.patch("/unfrezeUser/{:userId}",  authantcation(),Validation(UV.freezeSchema),UR.unfrezeUser)
 
 
 export default userRouter;

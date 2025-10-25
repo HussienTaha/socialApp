@@ -26,6 +26,10 @@ export interface IUser {
     profileImage?:string,
     tempProfileImage?:string,
     phone?: string, 
+    deletedAt?:Date
+    deletedBy?:Types.ObjectId
+    restordAt?:Date
+    restoredBy?:Types.ObjectId
     createdAt:Date,
     updatedAt:Date
 
@@ -36,6 +40,10 @@ const userSchema = new  mongoose.Schema<IUser>({
   age:{ type: Number, required: true ,min:18,max:100 },
     email:{ type: String, required: true , unique: true },
     otp :{ type: String},
+    deletedAt:{ type: Date },
+    deletedBy:{ type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    restordAt:{ type: Date },
+    restoredBy:{ type: mongoose.Schema.Types.ObjectId, ref: "User" },
     changecredentials:Date,
     profileImage:{ type: String},
     tempProfileImage:{ type: String},

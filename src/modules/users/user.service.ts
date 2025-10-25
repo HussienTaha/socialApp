@@ -1,10 +1,11 @@
-import { file } from 'zod';
+import { file } from "zod";
 import { UserRepository } from "./../../DB/repositories/user.reposatories";
 import { HydratedDocument, Model } from "mongoose";
 import {
   confermedotpSchemaType,
   flagType,
   forgetPasswordSchemaType,
+  freezeSchemaType,
   logoutSchemaType,
   reasetPasswordSchemaType,
   signUpschemaType,
@@ -23,9 +24,14 @@ import { generateToken } from "../../utils/token";
 import { RevokedTokenRepository } from "../../DB/repositories/revokedToken.reposatories";
 import RevokedTokenModel from "../../DB/models/revokedtoken.model";
 import { exists } from "fs";
-import { creartUplodeFilePresignedUrl, uploadFile, uploadFiles, uplodeLageFile } from "../../utils/s3config";
+import {
+  creartUplodeFilePresignedUrl,
+  uploadFile,
+  uploadFiles,
+  uplodeLageFile,
+} from "../../utils/s3config";
 import { allowedTypesEnum } from "../../middleware/multer.cloud";
-import ur from 'zod/v4/locales/ur.js';
+import ur from "zod/v4/locales/ur.js";
 
 class UserService {
   // private _userModel:Model<IUser>=userModel
@@ -140,12 +146,10 @@ class UserService {
       refreshToken,
     };
 
-    res
-      .status(200)
-      .json({
-        message: "User logged in successfully",
-        accessTokenAndRefreshToken,
-      });
+    res.status(200).json({
+      message: "User logged in successfully",
+      accessTokenAndRefreshToken,
+    });
   };
   //  greate get user service
   gitprofile = async (req: Request, res: Response, next: NextFunction) => {
@@ -212,12 +216,10 @@ class UserService {
       expireAt: new Date(req?.decoded.exp! * 1000),
     });
 
-    return res
-      .status(200)
-      .json({
-        message: " success to created a new refresh token",
-        accessTokenAndRefreshToken,
-      });
+    return res.status(200).json({
+      message: " success to created a new refresh token",
+      accessTokenAndRefreshToken,
+    });
   };
 
   forgetPassword = async (req: Request, res: Response, next: NextFunction) => {
@@ -259,6 +261,8 @@ class UserService {
     );
     return res.status(200).json({ message: "success to reset password" });
   };
+
+  //! uplode image in aws ???
   uplodeImage = async (req: Request, res: Response, next: NextFunction) => {
     const key = await uploadFile({
       Path: `users${req.user?._id}`,
@@ -270,7 +274,11 @@ class UserService {
       .status(200)
       .json({ message: "success to uplod image", key: key });
   };
-  uplodeLargeImage = async (req: Request, res: Response, next: NextFunction) => {
+  uplodeLargeImage = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
     const key = await uplodeLageFile({
       Path: `users${req.user?._id}`,
 
@@ -281,57 +289,110 @@ class UserService {
       .status(200)
       .json({ message: "success to uplod image", key: key });
   };
-   uploadFiles = async (req: Request, res: Response, next: NextFunction) => {
+  uploadFiles = async (req: Request, res: Response, next: NextFunction) => {
     const key = await uploadFiles({
       path: `users${req.user?._id}`,
-      files: req.files as Express.Multer.File[]
-    
-    })
+      files: req.files as Express.Multer.File[],
+    });
 
     return res
       .status(200)
       .json({ message: "success to uplod image", key: key });
   };
-uplodeFileswithpresignedurl = async (req: Request, res: Response, next: NextFunction) => {
-
-
- const  { contentType,orgnalName}=req.body
+  uplodeFileswithpresignedurl = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    const { contentType, orgnalName } = req.body;
     const url = await creartUplodeFilePresignedUrl({
- orgnalName,
+      orgnalName,
       contentType,
       Path: `users/${req.user?._id}`,
-    
-    })
+    });
 
     return res
       .status(200)
       .json({ message: "success to uplod image", url: url });
   };
 
-uplodeProfileImage = async (req: Request, res: Response, next: NextFunction) => {
+  uplodeProfileImage = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    const { contentType, orgnalName } = req.body;
 
- const  { contentType,orgnalName}=req.body
-
-const {key,url} = await creartUplodeFilePresignedUrl({
-
+    const { key, url } = await creartUplodeFilePresignedUrl({
       Path: `users/${req.user?._id}/coverImage`,
       contentType,
-      orgnalName
+      orgnalName,
+    });
 
-})
+    const user = await this._userModel.findOneAndupdate(
+      { _id: req.user?._id },
+      { profileImage: key, tempProfileImage: req.user?.profileImage }
+    );
 
-const user =   await this._userModel.findOneAndupdate({ _id: req.user?._id }, {profileImage :key, tempProfileImage :req.user?.profileImage}) ;
-
-if (!user) {
-  throw new CustomError("User not found", 404);
-}
-eventEmitter.emit("uplodeProfileImage", { userId: req.user?._id, oldkey: req.user?.profileImage,  key, expiresIn:60 });
+    if (!user) {
+      throw new CustomError("User not found", 404);
+    }
+    eventEmitter.emit("uplodeProfileImage", {
+      userId: req.user?._id,
+      oldkey: req.user?.profileImage,
+      key,
+      expiresIn: 60,
+    });
     return res
       .status(200)
       .json({ message: "success to uplod image", key: key });
   };
 
+  frezeUser = async (req: Request, res: Response, next: NextFunction) => {
+    const { userId } : freezeSchemaType = req.params  as unknown as freezeSchemaType;
+    if (!userId && req.user?.role !== RoleType.admin) {
+      throw new CustomError("User not found or not admin && unauthorized", 404);
+    }
+    const user = await this._userModel.findOneAndupdate(
+      { _id: userId || req.user?._id,deletedAt:{ $exists: false } },
+      {
+        deletedAt: new Date(),
+        deletedBy: req.user?._id,
+        changecredentials: new Date(),
+  
+      }
+    );
+    if (!user) {
+      throw new CustomError("User not found or already deleted ", 404);
+    }
+    return res.status(200).json({ message: "success to freze account 😎" });
+  };
+  unfrezeUser = async (req: Request, res: Response, next: NextFunction) => {
+    const { userId } : freezeSchemaType = req.params  as unknown as freezeSchemaType;
+    if (req.user?.role !== RoleType.admin) {
+      throw new CustomError("unauthorized", 401);
+    }
 
+
+     const requesterId = req.user?._id.toString();
+  const targetId = userId.toString();
+
+  if (requesterId === targetId) {
+    throw new CustomError("You cannot unfreeze your own account", 400);
+  }
+    const user = await this._userModel.findOneAndupdate(
+      { _id: userId ,deletedAt:{ $exists: true }},
+      {
+      $unset: { deletedAt: "", deletedBy: "" },
+        restordAt : new Date(),
+        restoredBy : req.user?._id
+      }
+    );
+    if (!user) {
+      throw new CustomError("User not found or already deleted ", 404);
+    }
+    return res.status(200).json({ message: "success to unfreze account 😎 👌" });
+  };
 }
 
 export default new UserService();
