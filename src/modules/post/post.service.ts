@@ -44,7 +44,7 @@ createpost= async ( req :Request , res :Response  , next :NextFunction)=>{
       ...req.body,
       attachments,
       assetFolderId,
-      createdBy: req.user?._id, // صاحب الأكونت اللي عامل post
+      createdBy: req.user?._id, 
     });
 
 if(!post)
@@ -107,27 +107,27 @@ if (!post) {
   throw new CustomError("Failed to update post or unauthorized", 404);
 }
 
-// ✅ تحديث المحتوى لو اتبعت
+
 if (req?.body?.content) {
   post.content = req.body.content;
 }
 
-// ✅ تحديث نوع الإتاحة
+
 if (req?.body?.availability) {
   post.availability = req.body.availability;
 }
 
-// ✅ تحديث حالة التعليقات
+
 if (req?.body?.allowComment) {
   post.allowComment = req.body.allowComment;
 }
 
-// ✅ لو فيه صور جديدة مرفوعة
+
 if (req?.files?.length) {
-  // نحذف الصور القديمة
+  
   await deletefiles({ urls: post.attachments || [] });
 
-  // نرفع الصور الجديدة
+  
   post.attachments = await uploadFiles({
     files: req.files as unknown as Express.Multer.File[],
     path: `users/${req.user?._id}/posts/${post.assetFolderId}`,
@@ -142,7 +142,7 @@ if (req?.body?.tags?.length){
       throw new CustomError("Invalid user id(s) in tags", 400);
     }
 }
-// ✅ حفظ التغييرات
+
 await post.save();
 
 
