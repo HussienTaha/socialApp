@@ -141,14 +141,11 @@ class UserService {
           : process.env.ADMIN_REFRESH_TOKEN_KEY!,
       option: { expiresIn: "30d", jwtid },
     });
-    const accessTokenAndRefreshToken = {
-      accessToken,
-      refreshToken,
-    };
-
+   
     res.status(200).json({
       message: "User logged in successfully",
-      accessTokenAndRefreshToken,
+      accessToken,
+      refreshToken,
     });
   };
   //  greate get user service

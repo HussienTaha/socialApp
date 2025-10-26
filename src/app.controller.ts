@@ -21,6 +21,7 @@ import {
 import { pipeline } from "node:stream";
 import { promisify } from "node:util";
 import postRouter from "./modules/post/post.controller";
+import commentRouter from "./modules/comment/comment.controller";
 const pipelineAsync = promisify(pipeline);
 const app: express.Application = express();
 const port: string | number = process.env.PORT || 5000;
@@ -140,6 +141,7 @@ const bootstrap = () => {
   
   app.use("/users", userRouter);
   app.use("/posts", postRouter);
+  app.use("/comments", commentRouter);
   app.get("/", (req: Request, res: Response, next: NextFunction) => {
     res.status(200).json({ message: "Server is up and running ❤️👌" });
   });
