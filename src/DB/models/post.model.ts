@@ -66,7 +66,24 @@ friends: [{ type: Schema.Types.ObjectId, ref: "User" }],
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
+    strictQuery: true
   }
 );
+
+
+postSchema.pre(["find", "findOne"], async function (next) {
+  const query = this.getQuery();
+  const {
+   paranoid, ...rest
+  }=query
+  if (paranoid===false) {
+this.setQuery({...rest})
+  }
+  else{
+    this.setQuery({...rest,deleteAt:{$exists:false}})
+  }
+  next();
+  
+})
  const PostModel = models.Post || model("Post", postSchema);
 export default PostModel

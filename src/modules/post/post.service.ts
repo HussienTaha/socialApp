@@ -92,8 +92,6 @@ return res.status(200).json({
 
 
 }
-
-
 updatepost =async ( req :Request , res :Response  , next :NextFunction)=>{
 
 const {postId}:liksPostInput= req.params  as liksPostInput
@@ -101,6 +99,7 @@ const {postId}:liksPostInput= req.params  as liksPostInput
 const post = await this._postModel.findOne({
   _id: postId,
   createdBy: req.user?._id,
+  paranoid: true,
 });
 
 if (!post) {
@@ -152,8 +151,27 @@ return res.status(200).json({
 });
 
 }
+deletepost =async ( req :Request , res :Response  , next :NextFunction)=>{
 
+const {postId}:liksPostInput= req.params  as liksPostInput
 
+const post = await this._postModel.findOne({
+  _id: postId,
+  createdBy: req.user?._id,
+  paranoid: true,
+});
+
+if (!post) {
+  throw new CustomError("Failed to delete post or unauthorized or post not found ", 404);
+}
+
+await deletefiles({ urls: post.attachments || [] });
+
+await this._postModel.deleteone({ _id: postId });
+return res.status(200).json({
+  message: "Post deleted successfully ❤️👌" ,
+})
+}
 
 
 
