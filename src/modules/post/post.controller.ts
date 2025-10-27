@@ -17,6 +17,7 @@ import commentRouter from "../comment/comment.controller";
 postRouter.patch("/like/:postId", authantcation(),Validation(PV.liksPostSchema),PS.likepost)
 postRouter.patch("/update/:postId", authantcation(),multerCloud({ fileTypes: Object.values(FILE_TYPES.IMAGES)}).array("attachments"),Validation(PV.updatePostSchema),)
 postRouter.patch("/delete/:postId", authantcation(),Validation(PV.liksPostSchema),PS.deletepost)
+postRouter.get("/getposts",PS.getposts)
 
 
 export default postRouter

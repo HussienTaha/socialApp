@@ -12,7 +12,7 @@ import { commentRepository } from "../../DB/repositories/comment.reposatories";
 import commentModel from "../../DB/models/comment.model ";
 import { CustomError } from "../../utils/classErrorHandling";
 import { v4 as uuidv4 } from "uuid";
-import { uploadFiles } from "../../utils/s3config";
+import { deletefiles, uploadFiles } from "../../utils/s3config";
 import  { Types } from "mongoose";
 class commentService {
   private _userModel = new UserRepository(userModel);
@@ -29,7 +29,8 @@ class commentService {
       _id: postId,
       isDeleted: false,
       allowComment: AllowCommentEnum.ALLOW,
-      AvailabilityEnum: [AvailabilityEnum.PUBLIC, AvailabilityEnum.FRIENDS],
+      availability: AvailabilityEnum.PUBLIC || AvailabilityEnum.FRIENDS,
+  
     });
     if (!post) {
       throw new CustomError("post not found", 404);
@@ -61,11 +62,45 @@ const comment = await this._commentModel.create({
   postId:postId as unknown as Types.ObjectId ,
   
 })
-
-
     return res
       .status(200)
       .json({ message: "success create comment ❤️👌", comment });
+  };
+  updatecomment = async (req: Request, res: Response, next: NextFunction) => {
+    const { commentId } = req.params;
+    const { content, attachments , tags } = req.body;
+    const comment = await this._commentModel.findOneAndupdate(
+      { _id: commentId, isDeleted: false },
+      { content, attachments ,tags },
+      { new: true }
+    );
+    if (!comment) {
+      throw new CustomError("comment not found or is deleted", 404);
+    }
+    return res
+      .status(200)
+      .json({ message: "success update comment ❤️👌", comment });
+  };
+  deletecomment = async (req: Request, res: Response, next: NextFunction) => {
+    const { commentId } = req.params;
+    const comment =await this._commentModel.findOne({
+      _id: commentId,
+      createdBy: req.user?._id,
+      paranoid: true,
+    });
+        if (!comment) {
+          throw new CustomError(
+            "Failed to delete post or unauthorized or post not found ",
+            404
+          );
+        }
+        if (comment.attachments?.length)
+            await deletefiles({ urls: comment.attachments || [] });
+          
+  await this._postModel.deleteone({ _id:commentId  });
+    return res.status(200).json({
+      message: "comment deleted successfully ❤️👌",
+    });
   };
 }
 

@@ -19,6 +19,51 @@ export abstract class DBrepositories<TDocument> {
 ): Promise<HydratedDocument<TDocument>[]> {
   return await this.model.find(filter, select, options);
 }
+async Find({
+  filter,
+  select,
+  options,
+}: {
+  filter: RootFilterQuery<TDocument>;
+  select?: ProjectionType<TDocument>;
+  options?: QueryOptions<TDocument>;
+}): Promise<HydratedDocument<TDocument>[]> {
+  return this.model.find(filter, select, options);
+}
+async paginate({
+  filter,
+  query,
+  select,
+  options,
+}: {
+  filter: RootFilterQuery<TDocument>;
+  query: {
+    page: number;
+    limit: number;
+  };
+  select?: ProjectionType<TDocument>;
+  options?: QueryOptions<TDocument>;
+}) {
+ let {page,limit}=query
+ 
+if (page<0){
+  page
+}
+page =page * 1||1
+
+const skip=(page-1)*limit
+
+const filnaloptions={
+  ...options,
+  skip,
+  limit
+}
+
+const count = await this.model.countDocuments({deletedAt:{$exists:false}});
+const numberofpages = Math.ceil(count / limit)
+  const doc=await this.model.find(filter, select, filnaloptions);
+  return{doc , currentPage:page,count,numberofpages}
+}
 
 
 async updateone(

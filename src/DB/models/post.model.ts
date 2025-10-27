@@ -85,5 +85,10 @@ this.setQuery({...rest})
   next();
   
 })
+postSchema.virtual("comments", {
+  ref: "Comment",
+  localField: "_id",
+  foreignField: "postId",
+})
  const PostModel = models.Post || model("Post", postSchema);
 export default PostModel

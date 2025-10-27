@@ -17,5 +17,20 @@ commentRouter.post(
   Validation(CV.createCommentSchema),
   CS.createcomment
 );
+commentRouter.patch(
+  "/updatecomment/:commentId",
+  authantcation(),
+  multerCloud({ fileTypes: Object.values(FILE_TYPES.IMAGES) }).array(
+    "attachments"
+  ),
+  Validation(CV.updateCommentSchema),
+  CS.updatecomment
+);
+commentRouter.delete(
+  "/deletecomment/:commentId",
+  authantcation(),
+  Validation(CV.deleteCommentSchema),
+  CS.deletecomment
+);
 
 export default commentRouter;

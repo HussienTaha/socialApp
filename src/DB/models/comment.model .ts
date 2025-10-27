@@ -1,4 +1,4 @@
-import { Schema, model, Document, models, Types } from "mongoose";
+import mongoose, { Schema, model, Document, models, Types } from "mongoose";
 
 
 
@@ -10,7 +10,7 @@ export interface IComment
   assetFolderId?: string;
 
   createdBy: Types.ObjectId;
-
+commentId :Types.ObjectId
   tags?: Schema.Types.ObjectId[];
   likes?: Schema.Types.ObjectId[];
 
@@ -28,7 +28,7 @@ postId?:Types.ObjectId
     content: { type: String, minlength: 5, maxlength: 10000, required: function (){return this.attachments?.length === 0 } },
     attachments: [String],
     assetFolderId: String,
-
+commentId: { type: mongoose.Schema.Types.ObjectId, ref: "Comment" },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
 
     tags: [{ type: Schema.Types.ObjectId, ref: "User" }],
@@ -44,7 +44,9 @@ friends: [{ type: Schema.Types.ObjectId, ref: "User" }],
   
   {
     timestamps: true,
-    strictQuery: true
+    strictQuery: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
@@ -63,5 +65,10 @@ this.setQuery({...rest})
   next();
   
 })
- const commentModel = models.Post || model("Post", commentSchema);
+commentSchema.virtual("replies", {
+  ref: "Comment",
+  localField: "_id",
+  foreignField: "commentId",
+})
+ const commentModel = models.Comment || model("Comment", commentSchema);
 export default commentModel
