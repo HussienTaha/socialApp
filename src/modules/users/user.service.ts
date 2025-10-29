@@ -1,6 +1,6 @@
-import { file } from "zod";
+
 import { UserRepository } from "./../../DB/repositories/user.reposatories";
-import { HydratedDocument, Model } from "mongoose";
+import { HydratedDocument, Model, Types } from "mongoose";
 import {
   confermedotpSchemaType,
   flagType,
@@ -10,7 +10,7 @@ import {
   reasetPasswordSchemaType,
   signUpschemaType,
 } from "./user.vaildation";
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request, response, Response } from "express";
 import userModel, { IUser, RoleType } from "../../DB/models/user.model";
 import { DBrepositories } from "../../DB/repositories/DB.repositories";
 import { Compare, Hash } from "../../utils/hash";
@@ -32,13 +32,19 @@ import {
 } from "../../utils/s3config";
 import { allowedTypesEnum } from "../../middleware/multer.cloud";
 import ur from "zod/v4/locales/ur.js";
+import { postRepository } from "../../DB/repositories/post.reposatories ";
+import PostModel from "../../DB/models/post.model";
+import FrindRquestModel from "../../DB/models/frindRequst.model";
+import { frindRequesrRepository } from "../../DB/repositories/frindRequest.reposatories";
 
 class UserService {
   // private _userModel:Model<IUser>=userModel
   //  private _userModel= new DBrepositories<IUser>(userModel)
   private _userModel = new UserRepository(userModel);
   private _revokedModel = new RevokedTokenRepository(RevokedTokenModel);
-
+    private _postModel = new postRepository(PostModel);
+    private _FrindRquestModel = new frindRequesrRepository(FrindRquestModel);
+  
   constructor() {}
   signup = async (req: Request, res: Response, next: NextFunction) => {
     let {
@@ -47,7 +53,6 @@ class UserService {
       password,
       lName,
       fName,
-      cpassword,
       gender,
       address,
       role,
@@ -127,11 +132,16 @@ class UserService {
     const accessToken = await generateToken({
       payload: { id: user._id, email, role: user?.role as RoleType },
       segnature:
-        user?.role == RoleType.user
-          ? process.env.USER_ACCESS_TOKEN_KEY!
-          : process.env.ADMIN_ACCESS_TOKEN_KEY!,
+  user?.role === RoleType.user
+    ? process.env.USER_ACCESS_TOKEN_KEY!
+    : user?.role === RoleType.admin
+    ? process.env.ADMIN_ACCESS_TOKEN_KEY!
+    : process.env.SUPER_ACCESS_TOKEN_KEY!,
+
       option: { expiresIn: "1h", jwtid },
     });
+   
+    
 
     const refreshToken = await generateToken({
       payload: { id: user._id, email, role: user.role as RoleType },
@@ -342,7 +352,7 @@ class UserService {
     });
     return res
       .status(200)
-      .json({ message: "success to uplod image", key: key });
+      .json({ message: "success to uplod image", key: key ,url:url });
   };
 
   frezeUser = async (req: Request, res: Response, next: NextFunction) => {
@@ -390,6 +400,131 @@ class UserService {
     }
     return res.status(200).json({ message: "success to unfreze account 😎 👌" });
   };
+
+dashpoard = async (req: Request, res: Response, next: NextFunction) => {
+  //  const user = await this._userModel.Find({filter:{},select:{},options:{ lean: true }});
+  //  const posts = await this._postModel.Find({filter:{},select:{},options:{ lean: true }});
+ const result = await Promise.allSettled([
+  this._userModel.Find({filter:{},select:{},options:{ lean: true }}),
+  this._postModel.Find({filter:{},select:{},options:{ lean: true }})
+ ])
+
+  return res.status(200).json({ message: "success" , result});
+ };
+
+ updateRole= async (req: Request, res: Response, next: NextFunction) => {
+const { userId } : freezeSchemaType = req.params  as unknown as freezeSchemaType;   
+const { role:newRole }= req.body  
+
+const denyRolus : RoleType[] = [ newRole,RoleType.superAdmin]
+if (req.user?.role !== RoleType.admin) {
+  denyRolus.push(RoleType.admin)
+  if (newRole===RoleType.superAdmin) {
+    throw new CustomError("unauthorized", 401);
+  }
+}
+
+const user = await this._userModel.findOneAndupdate(
+  { _id: userId,role: { $nin: denyRolus }},{
+  $set: { role: newRole }
+  
+},{
+  new: true}
+
+);
+if (!user) {
+  throw new CustomError("User not found or already deleted ", 404);
+}
+return res.status(200).json({ message: "success to update role 😎" });
+
+  }
+
+
+
+  sendRequest = async (req: Request, res: Response, next: NextFunction) => {
+
+    const { userId } = req.params;
+
+    const user = await this._userModel.findOne({ _id: userId });
+    if (!user) {
+      throw new CustomError ("User not found", 404);
+    }
+
+    if (req.user?._id.toString() === userId) {
+      throw new CustomError ("You can't send a request to yourself", 400);
+    }
+
+    const checkRequest = await this._FrindRquestModel.findOne({
+      $or: [
+        { createdBy: req.user?._id, sendTo: userId },
+        { createdBy: userId, sendTo: req.user?._id },
+      ],
+    });
+
+    if (checkRequest) {
+      throw new CustomError ("Request already sent", 400);
+    }
+
+    const friendRequest = await this._FrindRquestModel.create({
+      createdBy: req.user?._id as unknown as Types.ObjectId,
+      sendTo: userId as unknown as Types.ObjectId,
+    });
+
+    return res.status(200).json({ message: "success", friendRequest });
+
+};
+
+
+acceptRequest = async (req: Request, res: Response, next: NextFunction) => {
+  const { requestId } = req.params; 
+  const add =await this._FrindRquestModel.findOne(
+        {
+      _id: requestId,
+      sendTo: req.user?._id,
+      acceptedAt: { $exists: false },
+      accpted: { $exists: false },
+    }
+  )
+  if (add?.accpte === true) {
+    throw new CustomError("request already accepted", 404);
+  }
+
+  
+  const checkRequest = await this._FrindRquestModel.findOneAndupdate(
+    {
+      _id: requestId,
+      sendTo: req.user?._id,
+      acceptedAt: { $exists: false },
+      accpted: { $exists: false },
+    },
+    {
+      accptedAt: new Date(),
+      accpte: true,
+    },
+    { new: true }
+  );
+
+  if (!checkRequest) {
+    throw new  CustomError("request not found", 404);
+  }
+
+
+  await Promise.all([
+    this._userModel.updateone(
+      { _id: checkRequest.createdBy },
+      { $addToSet: { friends: checkRequest.sendTo } }
+    ),
+    this._userModel.updateone(
+      { _id: checkRequest.sendTo },
+      { $addToSet: { friends: checkRequest.createdBy } }
+    ),
+  ]);
+
+  return res.status(200).json({ message: "success" , checkRequest});
+};
+
+
+
 }
 
 export default new UserService();

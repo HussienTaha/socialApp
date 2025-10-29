@@ -20,7 +20,9 @@ export const verifyToken =async ({token,segnature}:{
 }
 export enum TokenType{
     access="access",
-    refresh="refresh"
+    refresh="refresh",
+    super="super"
+   
 }
 
 const  _userModel = new UserRepository(userModel);
@@ -30,6 +32,9 @@ export const getsegnature = async(tokenType:TokenType ,prefix:string) => {
      if(tokenType === TokenType.access){
        if(prefix===process.env.BEARER_USER){
            return process.env.USER_ACCESS_TOKEN_KEY
+       }
+       else if(prefix===process.env.SUPER_ADMIN){
+           return process.env.SUPER_ACCESS_TOKEN_KEY
        }
        else if(prefix===process.env.BEARER_ADMIN){
            return process.env.ADMIN_ACCESS_TOKEN_KEY
@@ -43,6 +48,10 @@ export const getsegnature = async(tokenType:TokenType ,prefix:string) => {
        if(prefix===process.env.BEARER_USER){
            return process.env.USER_REFRESH_TOKEN_KEY
        }
+       else if(prefix===process.env.SUPER_ADMIN){
+           return process.env.SUPER_REFRESH_TOKEN_KEY
+       }
+   
        else if(prefix===process.env.BEARER_ADMIN){
            return process.env.ADMIN_REFRESH_TOKEN_KEY
        }
@@ -67,6 +76,8 @@ export const decodedTokenAndfitchUser=async(token:string,segnature:string) => {
     if(!user){
         throw new CustomError("User not found",404)
     }
+    console.log(user);
+    
     if(!user.confermed){
         throw new CustomError("User not confirmed or is deleted",401)
     }

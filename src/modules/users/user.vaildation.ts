@@ -1,6 +1,7 @@
 
 import { Types } from "mongoose";
 import z from "zod";
+import { generalRules } from "../../utils/generallRouls";
 export  enum flagType{
   all = "all",
   current = "current"
@@ -22,6 +23,7 @@ export const signUpSchema = {
       age: z.number().min(18).max(100).optional(),
       lName: z.string().min(3).max(20),
       fName: z.string().min(3).max(20),
+      profileImage: z.string().optional(),
     })
     .required()
     .superRefine((data, ctx) => {
@@ -99,7 +101,20 @@ export const freezeSchema = {
       }
     ),
 };
+export const addfrindSchema = {
+  params: z
+    .object({
+      userId: generalRules.id,
+    })
+  }
+export const acceptfrindSchema = {
+  params: z
+    .object({
+    requestId  : generalRules.id,
+    })
+  }
 
+export type addfrindSchemaType = z.infer<typeof addfrindSchema.params>;
 export type freezeSchemaType = z.infer<typeof freezeSchema.params>;
 export type reasetPasswordSchemaType = z.infer<typeof reasetPasswordSchema.body>;
 export type forgetPasswordSchemaType = z.infer<typeof forgetPasswordSchema.body>;

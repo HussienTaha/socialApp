@@ -7,7 +7,8 @@ export enum GenderType {
 }
 export enum RoleType {
     user = "user",
-    admin = "admin"
+    admin = "admin",
+    superAdmin = "superAdmin"
 }
 export interface IUser {
     _id:Types.ObjectId,
