@@ -28,7 +28,7 @@ export enum TokenType{
 const  _userModel = new UserRepository(userModel);
 const  _revokedModel = new RevokedTokenRepository(RevokedTokenModel);
 
-export const getsegnature = async(tokenType:TokenType ,prefix:string) => {
+export const getsegnature = async(tokenType:TokenType = TokenType.access ,prefix:string) => {
      if(tokenType === TokenType.access){
        if(prefix===process.env.BEARER_USER){
            return process.env.USER_ACCESS_TOKEN_KEY
@@ -41,8 +41,6 @@ export const getsegnature = async(tokenType:TokenType ,prefix:string) => {
        }
        else{null}
      }
-
-
 
       if(tokenType === TokenType.refresh){
        if(prefix===process.env.BEARER_USER){

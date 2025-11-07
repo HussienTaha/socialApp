@@ -10,10 +10,11 @@ import { multerCloud } from '../../middleware/multer.cloud';
 import { FILE_TYPES } from '../../utils/fileTypes';
 import { Authriztation } from '../../middleware/Authriztation';
 import { RoleType } from '../../DB/models/user.model';
+import chatRouter from '../chat/chat.controller';
 
 
  const userRouter = Router();
-
+userRouter.use("/:userId/chat",chatRouter)
 userRouter.post("/signup" ,Validation(UV.signUpSchema), UR.signup);
 userRouter.post("/login",Validation(UV.loginSchema), UR.login) 
 userRouter.patch("/confermedOtp",Validation(UV.confermedotpSchema), UR.confermotp) 

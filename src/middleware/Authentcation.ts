@@ -11,17 +11,17 @@ export const authantcation = ( tokenType :TokenType = TokenType.access)=>
     return async (req :Request, res :Response, next :NextFunction) => {
 
     const { authorization } = req.headers;
-    console.log(req.headers);
+    // console.log(req.headers);
     
     const [prefix, token  ] = authorization?.split(" ") || [];
     if (!prefix || !token) {
       throw new CustomError("Invalid authorization header format", 401);
     }
-  console.log(token);
+  // console.log(token);
   
 
     const segnature = await getsegnature(tokenType,prefix);
-    console.log(segnature);
+    // console.log(segnature);
     
     if (!segnature) {
       throw new CustomError("Invalid segnature not found", 401)    

@@ -7,10 +7,12 @@ export abstract class DBrepositories<TDocument> {
   }
   async findOne(
     filter: RootFilterQuery<TDocument>,
-    select?: ProjectionType<TDocument>
+    select?: ProjectionType<TDocument>,
+    options?: QueryOptions<TDocument>
   ): Promise<HydratedDocument<TDocument> | null> {
-    return this.model.findOne(filter);
+    return this.model.findOne(filter, select, options);
   }
+  
 
   async find(
   filter: RootFilterQuery<TDocument>,

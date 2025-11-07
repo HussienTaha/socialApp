@@ -30,12 +30,14 @@ import {
   uploadFiles,
   uplodeLageFile,
 } from "../../utils/s3config";
-import { allowedTypesEnum } from "../../middleware/multer.cloud";
 import ur from "zod/v4/locales/ur.js";
 import { postRepository } from "../../DB/repositories/post.reposatories ";
 import PostModel from "../../DB/models/post.model";
 import FrindRquestModel from "../../DB/models/frindRequst.model";
 import { frindRequesrRepository } from "../../DB/repositories/frindRequest.reposatories";
+import { chatRepository } from "../../DB/repositories/chat.reposatories";
+import { ChatModel } from "../../DB/models/chat.model";
+
 
 class UserService {
   // private _userModel:Model<IUser>=userModel
@@ -44,6 +46,8 @@ class UserService {
   private _revokedModel = new RevokedTokenRepository(RevokedTokenModel);
     private _postModel = new postRepository(PostModel);
     private _FrindRquestModel = new frindRequesrRepository(FrindRquestModel);
+      private _chatModel = new chatRepository(ChatModel);
+    
   
   constructor() {}
   signup = async (req: Request, res: Response, next: NextFunction) => {
@@ -153,16 +157,21 @@ class UserService {
     });
    
     res.status(200).json({
-      message: "User logged in successfully",
+      message: "success",
       accessToken,
       refreshToken,
     });
   };
   //  greate get user service
   gitprofile = async (req: Request, res: Response, next: NextFunction) => {
+    const userid = await this._userModel.findOne({ _id: req.user?._id },undefined,{ populate:[{path:"friends"}]});
+
+
+    const groups = await this._chatModel.find({ participants: { $all: [req.user?._id] }, group: { $exists: true } });
+
     return res
       .status(200)
-      .json({ message: "profile get successfully", user: req.user });
+      .json({ message: "profile get successfully", user: req.user ,frinds:userid?.friends,groups});
   };
   logout = async (req: Request, res: Response, next: NextFunction) => {
     const { flag }: logoutSchemaType = req.body;
