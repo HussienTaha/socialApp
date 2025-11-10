@@ -1,4 +1,4 @@
-import { FILE_TYPES } from './../../utils/fileTypes';
+
 import { NextFunction, Request, Response } from "express";
 import { chatRepository } from "../../DB/repositories/chat.reposatories";
 import { ChatModel } from "../../DB/models/chat.model";
@@ -72,6 +72,7 @@ getGoupChat = async (req: Request, res: Response, next: NextFunction) => {
 
   sayhiiiii = async (data: any, socket: SocketWithUser, io: Server) => {
     console.log(data);
+    
   };
 
  sendGroupMessage = async (data: any, socket: SocketWithUser, io: Server) => {

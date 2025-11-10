@@ -20,17 +20,10 @@ import { pipeline } from "node:stream";
 import { promisify } from "node:util";
 import postRouter from "./modules/post/post.controller";
 import commentRouter from "./modules/comment/comment.controller";
-import { Server, Socket } from "socket.io";
-import {
-  decodedTokenAndfitchUser,
-  getsegnature,
-  TokenType,
-} from "./utils/token";
-import { HydratedDocument } from "mongoose";
-import { IUser } from "./DB/models/user.model";
-import { JwtPayload } from "jsonwebtoken";
 import { inilalizationIo } from "./modules/gateway/gateway";
 import chatRouter from "./modules/chat/chat.controller";
+import { GraphQLSchema, GraphQLObjectType, GraphQLString } from 'graphql';
+import { createHandler } from 'graphql-http/lib/use/express';
 const pipelineAsync = promisify(pipeline);
 const app: express.Application = express();
 const port: string | number = process.env.PORT || 5000;
@@ -157,6 +150,23 @@ const bootstrap = () => {
   });
 
   connectionDB();
+  
+const schema = new GraphQLSchema({
+  query: new GraphQLObjectType({
+    name: "Query",
+    description: "Root query",
+    fields: {
+      hello: {
+        type: GraphQLString,
+        resolve: (): string =>"Hello, GraphQL!"
+      },
+    },
+  })
+});
+app.all(
+  "/graphql",createHandler({schema}))
+;
+
 
   app.use("{/*demo}", (req: Request, res: Response, next: NextFunction) => {
     throw new CustomError(` invalid Url ${req.originalUrl}`, 404);
