@@ -1,3 +1,4 @@
+import { UserRepository } from "./DB/repositories/user.reposatories";
 import { resolve } from "path";
 import { config } from "dotenv";
 config({ path: resolve("./config/.env") });
@@ -22,8 +23,19 @@ import postRouter from "./modules/post/post.controller";
 import commentRouter from "./modules/comment/comment.controller";
 import { inilalizationIo } from "./modules/gateway/gateway";
 import chatRouter from "./modules/chat/chat.controller";
-import { GraphQLSchema, GraphQLObjectType, GraphQLString } from 'graphql';
-import { createHandler } from 'graphql-http/lib/use/express';
+import {
+  GraphQLSchema,
+  GraphQLObjectType,
+  GraphQLString,
+  GraphQLNonNull,
+  GraphQLID,
+  GraphQLList,
+  GraphQLInt,
+} from "graphql";
+import { createHandler } from "graphql-http/lib/use/express";
+import id from "zod/v4/locales/id.js";
+import { get } from "node:http";
+import { Schema } from "./modules/graphql/schema.gql";
 const pipelineAsync = promisify(pipeline);
 const app: express.Application = express();
 const port: string | number = process.env.PORT || 5000;
@@ -35,8 +47,6 @@ const limiter = rateLimit({
   statusCode: 429, // 429 status = Too Many Requests
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
-
-
 
 app.get(
   "/uplode/presignedUrl/*path",
@@ -150,23 +160,11 @@ const bootstrap = () => {
   });
 
   connectionDB();
-  
-const schema = new GraphQLSchema({
-  query: new GraphQLObjectType({
-    name: "Query",
-    description: "Root query",
-    fields: {
-      hello: {
-        type: GraphQLString,
-        resolve: (): string =>"Hello, GraphQL!"
-      },
-    },
-  })
-});
-app.all(
-  "/graphql",createHandler({schema}))
-;
 
+  //! عندنا طريقتين عشان تخلي  الجراف يعدي علي auth 
+  //! ف يااما نخلها علي كل api يا اما نخلص اللل ياحنا عاوزينه بس
+
+  app.all("/graphql", createHandler({ schema: Schema, context:(req)=> ({req}) }));
 
   app.use("{/*demo}", (req: Request, res: Response, next: NextFunction) => {
     throw new CustomError(` invalid Url ${req.originalUrl}`, 404);
@@ -185,8 +183,5 @@ app.all(
     console.log(`Server is running at http://localhost:${port}`);
   });
   inilalizationIo(HttpServer);
-
-
-
 };
 export default bootstrap;

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import { ZodType } from "zod";
 import { CustomError } from "../utils/classErrorHandling";
+import { GraphQLError } from "graphql";
 
 
 type ReqType = keyof Request;
@@ -35,3 +36,25 @@ export const Validation = (schema: SchemaType): RequestHandler => {
     return next();
   };
 };
+
+
+export const ValidationGQL = async(schema: ZodType, args: any) => {
+  const errorResult = [];
+
+  const result = schema.safeParse(args);
+
+  if (!result.success) {
+    errorResult.push(result.error);
+
+    if (errorResult.length) {
+      throw new GraphQLError("Validation Error", {
+        extensions: {
+          code: "VALIDATION_ERROR",
+          http: { status: 400 },
+          errors: JSON.parse(errorResult as unknown as string),
+        },
+      });
+    }
+  }
+};
+

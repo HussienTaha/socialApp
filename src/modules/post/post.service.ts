@@ -1,8 +1,9 @@
+import { get } from 'node:http';
 import { AvailabilityEnum, IPost } from "./../../DB/models/post.model";
 import { UpdateQuery } from "mongoose";
 import { NextFunction, Response, Request } from "express";
 import PostModel from "../../DB/models/post.model";
-import userModel from "../../DB/models/user.model";
+import userModel, { RoleType } from "../../DB/models/user.model";
 import { postRepository } from "../../DB/repositories/post.reposatories ";
 import { UserRepository } from "../../DB/repositories/user.reposatories";
 import { CustomError } from "../../utils/classErrorHandling";
@@ -12,6 +13,8 @@ import { actionEnum, liksPostInput, liksPostQuery } from "./post.validation";
 import { commentRepository } from "../../DB/repositories/comment.reposatories";
 import commentModel from "../../DB/models/comment.model ";
 import { populate } from "dotenv";
+import { AuthorizationGQL } from "../../middleware/Authriztation";
+import { authantcationGraph } from "../../middleware/Authentcation";
 
 class postservice {
   private _userModel = new UserRepository(userModel);
@@ -206,6 +209,23 @@ class postservice {
       // posts
     });
   };
+//! GQL 
+
+
+
+getAllpostsgQL= async(parent: any, args: any, context: any, ) =>{
+    const token = context?.req.headers?.authorization
+      const {user}=await authantcationGraph(token)
+      await AuthorizationGQL({accessRoles:[RoleType.admin ,RoleType.superAdmin,RoleType.user ],role:user?.role as RoleType})
+const getAllpost = await this._postModel.find({})
+return getAllpost
+
+}
+
+
+
+
+
 }
 
 export default new postservice();

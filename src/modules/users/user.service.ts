@@ -6,6 +6,7 @@ import {
   flagType,
   forgetPasswordSchemaType,
   freezeSchemaType,
+  getGraphQlSchema,
   logoutSchemaType,
   reasetPasswordSchemaType,
   signUpschemaType,
@@ -37,6 +38,11 @@ import FrindRquestModel from "../../DB/models/frindRequst.model";
 import { frindRequesrRepository } from "../../DB/repositories/frindRequest.reposatories";
 import { chatRepository } from "../../DB/repositories/chat.reposatories";
 import { ChatModel } from "../../DB/models/chat.model";
+import { GraphQLError } from "graphql";
+import { authantcationGraph } from "../../middleware/Authentcation";
+import { AuthorizationGQL } from "../../middleware/Authriztation";
+import { ValidationGQL } from "../../middleware/vaildation";
+
 
 
 class UserService {
@@ -533,7 +539,83 @@ acceptRequest = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 
+//! graphql
 
+getOneuser= async (parent: any, args: any, context: any) => {
+
+
+  const token = context?.req.headers?.authorization
+
+  const {user}=await authantcationGraph(token)
+
+  await AuthorizationGQL({accessRoles:[RoleType.admin ,RoleType.superAdmin,RoleType.user ],role:user?.role as RoleType})
+  // await ValidationGQL(getGraphQlSchema, args)
+const userExist  = await this._userModel.findOne({ _id:user._id });
+if (!userExist) {
+    throw new GraphQLError("User not found", {
+    extensions: {
+      message: "USER_NOT_FOUND",
+      statusCode: 404,
+    },
+  });
+}
+return user
+}
+
+getAllUsers= async (parent: any, args: any) => {
+
+const users = await this._userModel.find({});
+if (!users) {
+  throw new GraphQLError("Users not found", {
+    extensions: {
+      message: "USERS_NOT_FOUND",
+      statusCode: 404,
+    },
+  });
+}
+return users
+
+}
+
+createUser= async (parent: any, args: any) => {
+
+const { lName, fName, email, password ,age ,phone,address} = args;
+console.log(args);
+
+const user = await this._userModel.findOne({  email });
+console.log(user);
+
+if (user) {
+  throw new GraphQLError("User already exist", {
+    extensions: {
+      message: "USER_ALREADY_EXIST",
+      statusCode: 409,
+    },
+  });
+}
+const hashPassword = await Hash(password, 10);
+const newUser = await this._userModel.create({
+  lName,
+  fName,
+  email,
+  password: hashPassword,
+  age,
+  phone,
+  address
+});
+if (!newUser) {
+  throw new GraphQLError("User  not created", {
+    extensions: {
+      message: "USER_NOT_CREATED",
+      statusCode:  400,
+    },
+  });
+}
+return newUser
+
+
+}
+ 
 }
 
 export default new UserService();

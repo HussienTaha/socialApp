@@ -114,6 +114,10 @@ export const acceptfrindSchema = {
     })
   }
 
+  export const getGraphQlSchema = z.strictObject({
+    id: generalRules
+  }). required() 
+
 export type addfrindSchemaType = z.infer<typeof addfrindSchema.params>;
 export type freezeSchemaType = z.infer<typeof freezeSchema.params>;
 export type reasetPasswordSchemaType = z.infer<typeof reasetPasswordSchema.body>;
